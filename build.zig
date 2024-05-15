@@ -22,8 +22,15 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.addCSourceFile(.{ .file = b.path("src/c_code.c") });
-    exe.addIncludePath(b.path("src/"));
+    exe.linkSystemLibrary("sdl2");
+    exe.linkSystemLibrary("opengl");
+    exe.linkLibC();
+
+    const zgl = b.dependency("zgl", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("zgl", zgl.module("zgl"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default

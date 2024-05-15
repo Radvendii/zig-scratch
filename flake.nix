@@ -26,7 +26,14 @@
       inherit zig;
     };
     devShells.${system}.default = pkgs.mkShell {
-      buildInputs = [ zig zls ];
+      buildInputs = with pkgs; [ 
+        pkg-config
+        gdb
+        zls
+
+        zig
+        SDL2
+      ];
     };
   };
 }
