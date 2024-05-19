@@ -11,6 +11,8 @@ const VERTEX_SHADER =
     \\}
 ;
 
+var quit = false;
+
 pub fn main() !void {
     try sdl.init(.{
         .video = true,
@@ -19,16 +21,19 @@ pub fn main() !void {
     });
     defer sdl.quit();
 
+    // TODO: setAttributes?
+    try sdl.gl.setAttribute(.{ .context_major_version = 4 });
+    try sdl.gl.setAttribute(.{ .context_minor_version = 6 });
+    try sdl.gl.setAttribute(.{ .context_profile_mask = .core });
+    try sdl.gl.setAttribute(.{ .doublebuffer = true });
+
     const window = try sdl.createWindow(
         "SDL.zig Basic Demo",
         .{ .centered = {} },
         .{ .centered = {} },
         640,
         480,
-        .{
-            .vis = .shown,
-            .context = .opengl,
-        },
+        .{ .vis = .shown, .context = .opengl },
     );
     defer window.destroy();
 
@@ -38,23 +43,44 @@ pub fn main() !void {
     // TODO: maybe make this context.makeCurrent(). is it sensible to have one context attached to multiple windows?
     try sdl.gl.makeCurrent(context, window);
 
-    c.glMatrixMode(c.GL_PROJECTION);
-    c.glLoadIdentity();
-    c.glMatrixMode(c.GL_MODELVIEW);
-    c.glLoadIdentity();
+    try initGL();
 
-    c.glClearColor(0.0, 0.0, 0.0, 1.0);
-    c.glClear(c.GL_COLOR_BUFFER_BIT);
-    c.glBegin(c.GL_QUADS);
-    c.glColor3f(1.0, 1.0, 1.0);
-    c.glVertex2f(-0.5, -0.5);
-    c.glVertex2f(-0.5, 0.5);
-    c.glVertex2f(0.5, 0.5);
-    c.glVertex2f(0.5, -0.5);
-    c.glEnd();
+    // TODO: getSize() should probably return the same type that viewport() takes??
+    const window_size = window.getSize();
+    gl.viewport(0, 0, @intCast(window_size.width), @intCast(window_size.height));
 
-    // TODO: make window.swap() or window.glSwap() or window.gl.swap()
-    sdl.gl.swapWindow(window);
+    while (!quit) {
+        pollEvents();
+        render();
+        // TODO: make window.swap() or window.glSwap() or window.gl.swap()
+        sdl.gl.swapWindow(window);
+    }
+}
 
-    sdl.delay(2000);
+fn pollEvents() void {
+    while (sdl.pollEvent()) |ev| switch (ev) {
+        .window => |wev| switch (wev.type) {
+            .resized => |rev| {
+                gl.viewport(0, 0, @intCast(rev.width), @intCast(rev.height));
+            },
+            else => {},
+        },
+        .key_down => |kev| {
+            if (kev.keycode == .q) {
+                quit = true;
+            }
+        },
+        else => {},
+    };
+}
+
+fn render() void {}
+
+// TODO: figure out wtf this is doing
+fn getProcAddressWrapper(comptime _: type, symbolName: [:0]const u8) ?*const anyopaque {
+    return sdl.c.SDL_GL_GetProcAddress(symbolName);
+}
+
+fn initGL() !void {
+    try gl.loadExtensions(void, getProcAddressWrapper);
 }
