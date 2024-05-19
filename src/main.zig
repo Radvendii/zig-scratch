@@ -63,10 +63,13 @@ fn pollEvents() void {
             .resized => |rev| {
                 gl.viewport(0, 0, @intCast(rev.width), @intCast(rev.height));
             },
+            .close => {
+                quit = true;
+            },
             else => {},
         },
         .key_down => |kev| {
-            if (kev.keycode == .q) {
+            if (kev.keycode == .escape) {
                 quit = true;
             }
         },
@@ -74,7 +77,10 @@ fn pollEvents() void {
     };
 }
 
-fn render() void {}
+fn render() void {
+    gl.clearColor(0.0, 1.0, 0.0, 1.0);
+    gl.clear(.{ .color = true });
+}
 
 // TODO: figure out wtf this is doing
 fn getProcAddressWrapper(comptime _: type, symbolName: [:0]const u8) ?*const anyopaque {
