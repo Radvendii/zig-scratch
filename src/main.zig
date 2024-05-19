@@ -3,17 +3,13 @@ const sdl = @import("sdl");
 const gl = @import("zgl");
 const c = @import("c.zig");
 
-const VERTEX_SHADER =
-    \\#version 430 core
-    \\layout(location = 0) in vec2 v2VertexPos2D;
-    \\void main() {
-    \\  gl_Position = vec4(v2VertexPos2D, 0.0f, 1.0f);    
-    \\}
-;
-
 var quit = false;
 
 pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer std.debug.assert(gpa.deinit() == .ok);
+    const allocator = gpa.allocator();
+
     try sdl.init(.{
         .video = true,
         .events = true,
@@ -22,8 +18,8 @@ pub fn main() !void {
     defer sdl.quit();
 
     // TODO: setAttributes?
-    try sdl.gl.setAttribute(.{ .context_major_version = 4 });
-    try sdl.gl.setAttribute(.{ .context_minor_version = 6 });
+    try sdl.gl.setAttribute(.{ .context_major_version = 3 });
+    try sdl.gl.setAttribute(.{ .context_minor_version = 3 });
     try sdl.gl.setAttribute(.{ .context_profile_mask = .core });
     try sdl.gl.setAttribute(.{ .doublebuffer = true });
 
@@ -43,15 +39,41 @@ pub fn main() !void {
     // TODO: maybe make this context.makeCurrent(). is it sensible to have one context attached to multiple windows?
     try sdl.gl.makeCurrent(context, window);
 
+    // must be called after the context is current
+    // SEE: https://wiki.libsdl.org/SDL2/SDL_GL_GetProcAddress
     try initGL();
 
     // TODO: getSize() should probably return the same type that viewport() takes??
     const window_size = window.getSize();
+    // Not necessary. It should be created this way by default
     gl.viewport(0, 0, @intCast(window_size.width), @intCast(window_size.height));
+
+    gl.clearColor(0.2, 0.5, 0.3, 1.0);
+
+    const vao = gl.genVertexArray();
+    vao.bind();
+
+    const vertices = [_]f32{
+        -0.5, -0.5, 0,
+        0.5,  -0.5, 0,
+        0,    0.5,  0,
+    };
+
+    const vbo = gl.genBuffer();
+    // TODO: the indirection confuses zls. report bug
+    vbo.bind(.array_buffer);
+    vbo.data(f32, &vertices, .static_draw);
+
+    // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
+    gl.vertexAttribPointer(0, 3, .float, false, 3 * @sizeOf(f32), 0);
+    gl.enableVertexAttribArray(0);
+
+    const prog = createShaderProgram(allocator);
+    prog.use();
 
     while (!quit) {
         pollEvents();
-        render();
+        render(vao, prog);
         // TODO: make window.swap() or window.glSwap() or window.gl.swap()
         sdl.gl.swapWindow(window);
     }
@@ -77,12 +99,54 @@ fn pollEvents() void {
     };
 }
 
-fn render() void {
-    gl.clearColor(0.0, 1.0, 0.0, 1.0);
+fn render(vao: gl.VertexArray, shader_prog: gl.Program) void {
     gl.clear(.{ .color = true });
+    vao.bind();
+    shader_prog.use();
+    gl.drawArrays(.triangles, 0, 3);
 }
 
-// TODO: figure out wtf this is doing
+// TODO: figure out how big the error messages can be and get rid of the allocator
+// TODO: return an error in case of failures
+fn createShaderProgram(allocator: std.mem.Allocator) gl.Program {
+    const shader_files = struct {
+        const vert = @embedFile("./shaders/vert.glsl");
+        const frag = @embedFile("./shaders/frag.glsl");
+    };
+    const vert_shader = gl.createShader(.vertex);
+
+    vert_shader.source(1, &.{shader_files.vert});
+    vert_shader.compile();
+    // TODO: should get checked automatically in .compile()?
+    if (vert_shader.get(.compile_status) == 0) {
+        const log = vert_shader.getCompileLog(allocator) catch @panic("OOM!");
+        defer allocator.free(log);
+        std.debug.print("Error: vertex shader compilation failed {s}", .{log});
+    }
+    defer vert_shader.delete();
+
+    const frag_shader = gl.createShader(.fragment);
+    frag_shader.source(1, &.{shader_files.frag});
+    frag_shader.compile();
+    if (frag_shader.get(.compile_status) == 0) {
+        const log = frag_shader.getCompileLog(allocator) catch @panic("OOM!");
+        defer allocator.free(log);
+        std.debug.print("Error: vertex shader compilation failed {s}", .{log});
+    }
+    defer frag_shader.delete();
+
+    const prog = gl.createProgram();
+    prog.attach(vert_shader);
+    prog.attach(frag_shader);
+    prog.link();
+    if (prog.get(.link_status) == 0) {
+        const log = prog.getCompileLog(allocator) catch @panic("OOM!");
+        defer allocator.free(log);
+        std.debug.print("Error: shader program could not link {s}", .{log});
+    }
+    return prog;
+}
+
 fn getProcAddressWrapper(comptime _: type, symbolName: [:0]const u8) ?*const anyopaque {
     return sdl.c.SDL_GL_GetProcAddress(symbolName);
 }

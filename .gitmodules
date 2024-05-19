@@ -1,3 +1,6 @@
 [submodule "SDL.zig"]
 	path = SDL.zig
 	url = https://github.com/radvendii/SDL.zig
+[submodule "zgl"]
+	path = zgl
+	url = https://github.com/radvendii/zgl
