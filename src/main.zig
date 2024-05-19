@@ -53,11 +53,21 @@ pub fn main() !void {
     const vao = gl.genVertexArray();
     vao.bind();
 
+    // const vertices = [_]f32{
+    //     -0.5, -0.5, 0,
+    //     0.5,  -0.5, 0,
+    //     0.5,  0.5,  0,
+    //     -0.5, 0.5,  0,
+    // };
+
     const vertices = [_]f32{
-        -0.5, -0.5, 0,
-        0.5,  -0.5, 0,
-        0.5,  0.5,  0,
-        -0.5, 0.5,  0,
+        -0.7, -0.7, 0,
+        -0.7, -0.1, 0,
+        -0.2, -0.4, 0,
+
+        0.7,  -0.7, 0,
+        0.7,  -0.1, 0,
+        0.2,  -0.4, 0,
     };
 
     const indices = [_]u32{
@@ -122,7 +132,8 @@ fn render(vao: gl.VertexArray, shader_prog: gl.Program) void {
     gl.clear(.{ .color = true });
     vao.bind();
     shader_prog.use();
-    gl.drawElements(.triangles, 6, .unsigned_int, 0);
+    // gl.drawElements(.triangles, 6, .unsigned_int, 0);
+    gl.drawArrays(.triangles, 0, 6);
 }
 
 // TODO: figure out how big the error messages can be and get rid of the allocator
