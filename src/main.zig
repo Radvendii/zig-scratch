@@ -56,8 +56,19 @@ pub fn main() !void {
     const vertices = [_]f32{
         -0.5, -0.5, 0,
         0.5,  -0.5, 0,
-        0,    0.5,  0,
+        0.5,  0.5,  0,
+        -0.5, 0.5,  0,
     };
+
+    const indices = [_]u32{
+        0, 1, 2,
+        0, 3, 2,
+    };
+
+    // TODO: in what world would i ever want to take the same array and bind it sometimes as one and sometimes as another type of buffer? should that info not be stored with the buffer?
+    const ebo = gl.genBuffer();
+    ebo.bind(.element_array_buffer);
+    ebo.data(u32, &indices, .static_draw);
 
     const vbo = gl.genBuffer();
     // TODO: the indirection confuses zls. report bug
@@ -79,6 +90,8 @@ pub fn main() !void {
     }
 }
 
+var polygon_mode: gl.DrawMode = .fill;
+
 fn pollEvents() void {
     while (sdl.pollEvent()) |ev| switch (ev) {
         .window => |wev| switch (wev.type) {
@@ -90,10 +103,16 @@ fn pollEvents() void {
             },
             else => {},
         },
-        .key_down => |kev| {
-            if (kev.keycode == .escape) {
-                quit = true;
-            }
+        .key_down => |kev| switch (kev.keycode) {
+            .escape => quit = true,
+            .z => {
+                switch (polygon_mode) {
+                    .point, .line => polygon_mode = .fill,
+                    .fill => polygon_mode = .line,
+                }
+                gl.polygonMode(.front_and_back, polygon_mode);
+            },
+            else => {},
         },
         else => {},
     };
@@ -103,7 +122,7 @@ fn render(vao: gl.VertexArray, shader_prog: gl.Program) void {
     gl.clear(.{ .color = true });
     vao.bind();
     shader_prog.use();
-    gl.drawArrays(.triangles, 0, 3);
+    gl.drawElements(.triangles, 6, .unsigned_int, 0);
 }
 
 // TODO: figure out how big the error messages can be and get rid of the allocator
