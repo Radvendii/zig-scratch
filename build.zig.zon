@@ -19,6 +19,10 @@
             .url = "https://github.com/ziglibs/zgl/archive/291aad12f3bdc376d155d93b472ed1965d442c29.tar.gz",
             .hash = "1220bac3cda2e1f36cfe323df5db3ef6587188ad166c79ff01f8aa7bdb1a96cf20c2",
         },
+        // .sdl = .{
+        //     .url = "https://github.com/ikskuh/SDL.zig/archive/3dc5dafe36715410662d3f065e217e51945750c7.tar.gz",
+        //     .hash = "1220df75c39261e2c8c144c3009f959c3113eb72c63c13078df4760c085626dacf22",
+        // },
     },
     .paths = .{
         // This makes *all* files, recursively, included in this package. It is generally

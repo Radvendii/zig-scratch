@@ -1,8 +1,7 @@
 const std = @import("std");
-const SDL = @import("SDL.zig");
+const sdl = @import("sdl");
 const gl = @import("zgl");
-
-const c = SDL.c;
+const c = @import("c.zig");
 
 const VERTEX_SHADER =
     \\#version 430 core
@@ -12,25 +11,32 @@ const VERTEX_SHADER =
     \\}
 ;
 
-// fn loadShader(shaderType: c.GLenum, shaderText: [*:0]const u8) !c.GLuint {
-//     const shader = c.glCreateShader(shaderType);
-//     c.glShaderSource(shader, 1, )
-// }
-
 pub fn main() !void {
-    try SDL.init(.{ .video = true });
+    try sdl.init(.{
+        .video = true,
+        .events = true,
+        .audio = true,
+    });
+    defer sdl.quit();
 
-    const window = try SDL.createWindow(
-        "hello".ptr,
-        SDL.UNDEFINED_POS,
-        SDL.UNDEFINED_POS,
-        1000,
-        1000,
-        .{ .opengl = true },
+    const window = try sdl.createWindow(
+        "SDL.zig Basic Demo",
+        .{ .centered = {} },
+        .{ .centered = {} },
+        640,
+        480,
+        .{
+            .vis = .shown,
+            .context = .opengl,
+        },
     );
+    defer window.destroy();
 
-    const context = window.glCreateContext();
-    context.makeCurrent();
+    // TODO: make this window.createContext()
+    const context = try sdl.gl.createContext(window);
+
+    // TODO: maybe make this context.makeCurrent(). is it sensible to have one context attached to multiple windows?
+    try sdl.gl.makeCurrent(context, window);
 
     c.glMatrixMode(c.GL_PROJECTION);
     c.glLoadIdentity();
@@ -46,17 +52,9 @@ pub fn main() !void {
     c.glVertex2f(0.5, 0.5);
     c.glVertex2f(0.5, -0.5);
     c.glEnd();
-    // c.glCullFace(c.GL_BACK);
-    // c.glEnable(c.GL_CULL_FACE);
-    // c.glEnable(c.GL_DEPTH_TEST);
-    // c.glEnable(c.GL_STENCIL_TEST);
 
-    window.glSwap();
+    // TODO: make window.swap() or window.glSwap() or window.gl.swap()
+    sdl.gl.swapWindow(window);
 
-    // const renderer = try SDL.createRenderer(window, 0, .{ .accelerated = true });
-    // renderer.setDrawColor(.{ .r = 96, .g = 128, .b = 255, .a = 255 });
-    // renderer.clear();
-    // renderer.present();
-
-    SDL.sleep(2000);
+    sdl.delay(2000);
 }

@@ -22,9 +22,16 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.linkSystemLibrary("sdl2");
     exe.linkSystemLibrary("opengl");
     exe.linkLibC();
+
+    // TODO: update SDL.zig to use modern module system
+    const sdl = @import("SDL.zig/build.zig");
+    // TODO: upstream changes
+    // const sdl = @import("sdl");
+    const sdl_sdk = sdl.init(b, null);
+    sdl_sdk.link(exe, .dynamic);
+    exe.root_module.addImport("sdl", sdl_sdk.getWrapperModule());
 
     const zgl = b.dependency("zgl", .{
         .target = target,
