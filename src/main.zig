@@ -2,14 +2,11 @@ const std = @import("std");
 const sdl = @import("sdl");
 const gl = @import("zgl");
 const c = @import("c.zig");
+const ShaderProg = @import("shader_prog.zig");
 
 var quit = false;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer std.debug.assert(gpa.deinit() == .ok);
-    const allocator = gpa.allocator();
-
     try sdl.init(.{
         .video = true,
         .events = true,
@@ -88,15 +85,15 @@ pub fn main() !void {
     gl.vertexAttribPointer(0, 3, .float, false, 3 * @sizeOf(f32), 0);
     gl.enableVertexAttribArray(0);
 
-    const prog = createShaderProgram("./shaders/vert.glsl", "./shaders/frag.glsl", allocator);
+    const prog = try ShaderProg.init("./shaders/vert.glsl", "./shaders/frag.glsl");
     prog.use();
 
     // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
-    const aPos = prog.attribLocation("aPos") orelse return error.AttribNotFound;
+    const aPos = prog.prog.attribLocation("aPos") orelse return error.AttribNotFound;
     gl.vertexAttribPointer(aPos, 3, .float, false, 6 * @sizeOf(f32), 0);
     gl.enableVertexAttribArray(aPos);
 
-    const aColor = prog.attribLocation("aColor") orelse return error.AttribNotFound;
+    const aColor = prog.prog.attribLocation("aColor") orelse return error.AttribNotFound;
     gl.vertexAttribPointer(aColor, 3, .float, false, 6 * @sizeOf(f32), 3 * @sizeOf(f32));
     gl.enableVertexAttribArray(aColor);
 
@@ -137,51 +134,12 @@ fn pollEvents() void {
     };
 }
 
-fn render(vao: gl.VertexArray, shader_prog: gl.Program) !void {
+fn render(vao: gl.VertexArray, shader_prog: ShaderProg) !void {
     vao.bind();
     shader_prog.use();
 
     // gl.drawElements(.triangles, 6, .unsigned_int, 0);
     gl.drawArrays(.triangles, 0, 3);
-}
-
-// TODO: figure out how big the error messages can be and get rid of the allocator
-// TODO: return an error in case of failures
-fn createShaderProgram(comptime vert_p: []const u8, comptime frag_p: []const u8, allocator: std.mem.Allocator) gl.Program {
-    const vert_f = @embedFile(vert_p);
-    const frag_f = @embedFile(frag_p);
-    const vert_s = gl.createShader(.vertex);
-
-    vert_s.source(1, &.{vert_f});
-    vert_s.compile();
-    // TODO: should get checked automatically in .compile()?
-    if (vert_s.get(.compile_status) == 0) {
-        const log = vert_s.getCompileLog(allocator) catch @panic("OOM!");
-        defer allocator.free(log);
-        std.debug.print("Error: vertex shader compilation failed {s}", .{log});
-    }
-    defer vert_s.delete();
-
-    const frag_s = gl.createShader(.fragment);
-    frag_s.source(1, &.{frag_f});
-    frag_s.compile();
-    if (frag_s.get(.compile_status) == 0) {
-        const log = frag_s.getCompileLog(allocator) catch @panic("OOM!");
-        defer allocator.free(log);
-        std.debug.print("Error: vertex shader compilation failed {s}", .{log});
-    }
-    defer frag_s.delete();
-
-    const prog = gl.createProgram();
-    prog.attach(vert_s);
-    prog.attach(frag_s);
-    prog.link();
-    if (prog.get(.link_status) == 0) {
-        const log = prog.getCompileLog(allocator) catch @panic("OOM!");
-        defer allocator.free(log);
-        std.debug.print("Error: shader program could not link {s}", .{log});
-    }
-    return prog;
 }
 
 fn getProcAddressWrapper(comptime _: type, symbolName: [:0]const u8) ?*const anyopaque {
