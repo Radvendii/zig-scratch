@@ -80,9 +80,6 @@ pub fn main() !void {
     // TODO: the indirection confuses zls. report bug
     vbo.bind(.array_buffer);
     vbo.data(f32, &vertices, .static_draw);
-    // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
-    gl.vertexAttribPointer(0, 3, .float, false, 3 * @sizeOf(f32), 0);
-    gl.enableVertexAttribArray(0);
 
     // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
     // we can use prog.attribLocation(), but that would require the program to exist, runs at runtime, and technically only makes sense for a single program. then we have to store those somewhere.
@@ -91,6 +88,12 @@ pub fn main() !void {
     gl.enableVertexAttribArray(0);
 
     const prog = createShaderProgram("./shaders/vert.glsl", "./shaders/frag.glsl", allocator);
+    prog.use();
+
+    // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
+    const aPos = prog.attribLocation("aPos") orelse return error.AttribNotFound;
+    gl.vertexAttribPointer(aPos, 3, .float, false, 3 * @sizeOf(f32), 0);
+    gl.enableVertexAttribArray(aPos);
 
     while (!quit) {
         pollEvents();
