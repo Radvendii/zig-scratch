@@ -102,14 +102,14 @@ pub fn main() !void {
     gl.vertexAttribPointer(0, 3, .float, false, 3 * @sizeOf(f32), 0);
     gl.enableVertexAttribArray(0);
 
-    const prog = createShaderProgram(allocator);
-    prog.use();
+    const prog = createShaderProgram("./shaders/vert.glsl", "./shaders/frag.glsl", allocator);
+    const prog2 = createShaderProgram("./shaders/vert.glsl", "./shaders/frag2.glsl", allocator);
 
     while (!quit) {
         pollEvents();
         gl.clear(.{ .color = true });
         render(vao_1, prog);
-        render(vao_2, prog);
+        render(vao_2, prog2);
         // TODO: make window.swap() or window.glSwap() or window.gl.swap()
         sdl.gl.swapWindow(window);
     }
@@ -152,36 +152,34 @@ fn render(vao: gl.VertexArray, shader_prog: gl.Program) void {
 
 // TODO: figure out how big the error messages can be and get rid of the allocator
 // TODO: return an error in case of failures
-fn createShaderProgram(allocator: std.mem.Allocator) gl.Program {
-    const shader_files = struct {
-        const vert = @embedFile("./shaders/vert.glsl");
-        const frag = @embedFile("./shaders/frag.glsl");
-    };
-    const vert_shader = gl.createShader(.vertex);
+fn createShaderProgram(comptime vert_p: []const u8, comptime frag_p: []const u8, allocator: std.mem.Allocator) gl.Program {
+    const vert_f = @embedFile(vert_p);
+    const frag_f = @embedFile(frag_p);
+    const vert_s = gl.createShader(.vertex);
 
-    vert_shader.source(1, &.{shader_files.vert});
-    vert_shader.compile();
+    vert_s.source(1, &.{vert_f});
+    vert_s.compile();
     // TODO: should get checked automatically in .compile()?
-    if (vert_shader.get(.compile_status) == 0) {
-        const log = vert_shader.getCompileLog(allocator) catch @panic("OOM!");
+    if (vert_s.get(.compile_status) == 0) {
+        const log = vert_s.getCompileLog(allocator) catch @panic("OOM!");
         defer allocator.free(log);
         std.debug.print("Error: vertex shader compilation failed {s}", .{log});
     }
-    defer vert_shader.delete();
+    defer vert_s.delete();
 
-    const frag_shader = gl.createShader(.fragment);
-    frag_shader.source(1, &.{shader_files.frag});
-    frag_shader.compile();
-    if (frag_shader.get(.compile_status) == 0) {
-        const log = frag_shader.getCompileLog(allocator) catch @panic("OOM!");
+    const frag_s = gl.createShader(.fragment);
+    frag_s.source(1, &.{frag_f});
+    frag_s.compile();
+    if (frag_s.get(.compile_status) == 0) {
+        const log = frag_s.getCompileLog(allocator) catch @panic("OOM!");
         defer allocator.free(log);
         std.debug.print("Error: vertex shader compilation failed {s}", .{log});
     }
-    defer frag_shader.delete();
+    defer frag_s.delete();
 
     const prog = gl.createProgram();
-    prog.attach(vert_shader);
-    prog.attach(frag_shader);
+    prog.attach(vert_s);
+    prog.attach(frag_s);
     prog.link();
     if (prog.get(.link_status) == 0) {
         const log = prog.getCompileLog(allocator) catch @panic("OOM!");
