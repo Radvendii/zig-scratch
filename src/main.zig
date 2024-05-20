@@ -110,8 +110,8 @@ pub fn main() !void {
     while (!quit) {
         pollEvents();
         gl.clear(.{ .color = true });
-        render(vao_1, prog);
-        render(vao_2, prog2);
+        try render(vao_1, prog);
+        try render(vao_2, prog2);
         // TODO: make window.swap() or window.glSwap() or window.gl.swap()
         sdl.gl.swapWindow(window);
     }
@@ -145,9 +145,16 @@ fn pollEvents() void {
     };
 }
 
-fn render(vao: gl.VertexArray, shader_prog: gl.Program) void {
+fn render(vao: gl.VertexArray, shader_prog: gl.Program) !void {
     vao.bind();
     shader_prog.use();
+    const time = @as(f32, @floatFromInt(sdl.getTicks())) / 1000;
+    const green = (std.math.sin(time) / 2) + 0.5;
+
+    // TODO: move out of render loop
+    const ourColorUnif = shader_prog.uniformLocation("ourColor");
+
+    shader_prog.uniform4f(ourColorUnif, 0.3, green, 0.3, 1.0);
     // gl.drawElements(.triangles, 6, .unsigned_int, 0);
     gl.drawArrays(.triangles, 0, 6);
 }
