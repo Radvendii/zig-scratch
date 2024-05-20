@@ -58,9 +58,10 @@ pub fn main() !void {
     // };
 
     const vertices = [_]f32{
-        -0.7, -0.7, 0,
-        -0.7, -0.1, 0,
-        -0.2, -0.4, 0,
+        // positions   // colors
+        -0.7, -0.7, 0, 1.0, 0.0, 0.0,
+        -0.7, -0.1, 0, 0.0, 1.0, 0.0,
+        -0.2, -0.4, 0, 0.0, 0.0, 1.0,
     };
 
     const indices = [_]u32{
@@ -92,8 +93,12 @@ pub fn main() !void {
 
     // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
     const aPos = prog.attribLocation("aPos") orelse return error.AttribNotFound;
-    gl.vertexAttribPointer(aPos, 3, .float, false, 3 * @sizeOf(f32), 0);
+    gl.vertexAttribPointer(aPos, 3, .float, false, 6 * @sizeOf(f32), 0);
     gl.enableVertexAttribArray(aPos);
+
+    const aColor = prog.attribLocation("aColor") orelse return error.AttribNotFound;
+    gl.vertexAttribPointer(aColor, 3, .float, false, 6 * @sizeOf(f32), 3 * @sizeOf(f32));
+    gl.enableVertexAttribArray(aColor);
 
     while (!quit) {
         pollEvents();
@@ -137,7 +142,7 @@ fn render(vao: gl.VertexArray, shader_prog: gl.Program) !void {
     shader_prog.use();
 
     // gl.drawElements(.triangles, 6, .unsigned_int, 0);
-    gl.drawArrays(.triangles, 0, 6);
+    gl.drawArrays(.triangles, 0, 3);
 }
 
 // TODO: figure out how big the error messages can be and get rid of the allocator
