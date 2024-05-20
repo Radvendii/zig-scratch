@@ -99,6 +99,8 @@ pub fn main() !void {
     vbo_2.data(f32, &vertices_2, .static_draw);
 
     // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
+    // we can use prog.attribLocation(), but that would require the program to exist, runs at runtime, and technically only makes sense for a single program. then we have to store those somewhere.
+    // maybe better to define constants
     gl.vertexAttribPointer(0, 3, .float, false, 3 * @sizeOf(f32), 0);
     gl.enableVertexAttribArray(0);
 
