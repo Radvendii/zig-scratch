@@ -47,33 +47,17 @@ pub fn main() !void {
 
     gl.clearColor(0.2, 0.5, 0.3, 1.0);
 
-    // const vertices = [_]f32{
-    //     -0.5, -0.5, 0,
-    //     0.5,  -0.5, 0,
-    //     0.5,  0.5,  0,
-    //     -0.5, 0.5,  0,
-    // };
-
     const vertices = [_]f32{
         // positions   // colors
         -0.7, -0.7, 0, 1.0, 0.0, 0.0,
-        -0.7, -0.1, 0, 0.0, 1.0, 0.0,
-        -0.2, -0.4, 0, 0.0, 0.0, 1.0,
-    };
-
-    const indices = [_]u32{
-        0, 1, 2,
-        0, 3, 2,
+        0,    0.6,  0, 0.0, 1.0, 0.0,
+        0.7,  -0.7, 0, 0.0, 0.0, 1.0,
     };
 
     const vao = gl.genVertexArray();
     vao.bind();
 
     // TODO: in what world would i ever want to take the same array and bind it sometimes as one and sometimes as another type of buffer? should that info not be stored with the buffer?
-    const ebo = gl.genBuffer();
-    ebo.bind(.element_array_buffer);
-    ebo.data(u32, &indices, .static_draw);
-
     const vbo = gl.genBuffer();
     // TODO: the indirection confuses zls. report bug
     vbo.bind(.array_buffer);
