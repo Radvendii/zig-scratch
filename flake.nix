@@ -30,6 +30,7 @@
         pkg-config
         gdb
         zls
+        glslls
 
         zig
         SDL2
