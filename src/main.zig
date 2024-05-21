@@ -81,6 +81,10 @@ pub fn main() !void {
     gl.vertexAttribPointer(aColor, 3, .float, false, 6 * @sizeOf(f32), 3 * @sizeOf(f32));
     gl.enableVertexAttribArray(aColor);
 
+    // TODO: wrap uniforms in their own enum datatype?
+    const offset = prog.prog.uniformLocation("offset");
+    gl.uniform2f(offset, 0.2, 0.0);
+
     while (!quit) {
         pollEvents();
         gl.clear(.{ .color = true });
