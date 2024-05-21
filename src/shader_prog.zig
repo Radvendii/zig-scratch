@@ -3,6 +3,7 @@
 const std = @import("std");
 const sdl = @import("sdl");
 const gl = @import("zgl");
+const log = std.log.scoped(.shader_prog);
 
 const Self = @This();
 
@@ -18,11 +19,10 @@ fn shaderCheckErr(shader: gl.Shader) !void {
         var buf: [ERR_BUF_LEN]u8 = undefined;
         var buf_len: i32 = 0;
         const log_len = shader.get(.info_log_length);
-        if (log_len > ERR_BUF_LEN) {
-            std.log.warn("Shader error too long! It had to be truncated. Consider increasing MAX_ERR_LEN ({})", .{ERR_BUF_LEN});
-            gl.binding.getShaderInfoLog(@intFromEnum(shader), ERR_BUF_LEN, &buf_len, &buf);
-            std.log.warn("Error: shader compilation failed:\n {s}", .{buf});
-        }
+        if (log_len > ERR_BUF_LEN)
+            log.err("Shader error too long! It had to be truncated. Consider increasing MAX_ERR_LEN ({})", .{ERR_BUF_LEN});
+        gl.binding.getShaderInfoLog(@intFromEnum(shader), ERR_BUF_LEN, &buf_len, &buf);
+        log.err("shader compilation failed:\n {s}", .{buf[0..@intCast(buf_len)]});
         return error.ShaderCompile;
     }
 }
@@ -33,11 +33,10 @@ fn progCheckErr(prog: gl.Program) !void {
         var buf: [ERR_BUF_LEN]u8 = undefined;
         var buf_len: i32 = 0;
         const log_len = prog.get(.info_log_length);
-        if (log_len > ERR_BUF_LEN) {
-            std.log.warn("Program error too long! It had to be truncated. Consider increasing MAX_ERR_LEN ({})", .{ERR_BUF_LEN});
-            gl.binding.getShaderInfoLog(@intFromEnum(prog), ERR_BUF_LEN, &buf_len, &buf);
-            std.log.warn("Error: program linking failed:\n {s}", .{buf});
-        }
+        if (log_len > ERR_BUF_LEN)
+            log.err("Program error too long! It had to be truncated. Consider increasing MAX_ERR_LEN ({})", .{ERR_BUF_LEN});
+        gl.binding.getShaderInfoLog(@intFromEnum(prog), ERR_BUF_LEN, &buf_len, &buf);
+        log.err("program linking failed:\n {s}", .{buf[0..@intCast(buf_len)]});
         return error.ProgramLink;
     }
 }
