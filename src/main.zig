@@ -77,9 +77,12 @@ pub fn main() !void {
     gl.vertexAttribPointer(aPos, 3, .float, false, 6 * @sizeOf(f32), 0);
     gl.enableVertexAttribArray(aPos);
 
-    const aColor = prog.prog.attribLocation("aColor") orelse return error.AttribNotFound;
-    gl.vertexAttribPointer(aColor, 3, .float, false, 6 * @sizeOf(f32), 3 * @sizeOf(f32));
-    gl.enableVertexAttribArray(aColor);
+    if (prog.prog.attribLocation("aColor")) |aColor| {
+        gl.vertexAttribPointer(aColor, 3, .float, false, 6 * @sizeOf(f32), 3 * @sizeOf(f32));
+        gl.enableVertexAttribArray(aColor);
+    } else {
+        // return error.AttribNotFound;
+    }
 
     // TODO: wrap uniforms in their own enum datatype?
     const offset = prog.prog.uniformLocation("offset");
