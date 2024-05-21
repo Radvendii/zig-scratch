@@ -73,11 +73,11 @@ pub fn main() !void {
     prog.use();
 
     // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
-    const aPos = prog.prog.attribLocation("aPos") orelse return error.AttribNotFound;
+    const aPos = prog.attribLocation("aPos") orelse return error.AttribNotFound;
     gl.vertexAttribPointer(aPos, 3, .float, false, 6 * @sizeOf(f32), 0);
     gl.enableVertexAttribArray(aPos);
 
-    if (prog.prog.attribLocation("aColor")) |aColor| {
+    if (prog.attribLocation("aColor")) |aColor| {
         gl.vertexAttribPointer(aColor, 3, .float, false, 6 * @sizeOf(f32), 3 * @sizeOf(f32));
         gl.enableVertexAttribArray(aColor);
     } else {
@@ -85,7 +85,7 @@ pub fn main() !void {
     }
 
     // TODO: wrap uniforms in their own enum datatype?
-    const offset = prog.prog.uniformLocation("offset");
+    const offset = prog.uniformLocation("offset");
     gl.uniform2f(offset, 0.2, 0.0);
 
     while (!quit) {
@@ -125,7 +125,7 @@ fn pollEvents() void {
     };
 }
 
-fn render(vao: gl.VertexArray, shader_prog: ShaderProg) !void {
+fn render(vao: gl.VertexArray, shader_prog: gl.Program) !void {
     vao.bind();
     shader_prog.use();
 

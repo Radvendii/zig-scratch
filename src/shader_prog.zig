@@ -1,5 +1,3 @@
-// TODO: get rid of this layer of wrapping. maybe just rewrap the original enum
-
 const std = @import("std");
 const sdl = @import("sdl");
 const gl = @import("zgl");
@@ -8,8 +6,6 @@ const log = std.log.scoped(.shader_prog);
 const Self = @This();
 
 const ERR_BUF_LEN = 512;
-
-prog: gl.Program,
 
 // TODO: vary behaviour based on zgl error handling
 // TODO: should this get checked automatically in .compile()?
@@ -42,7 +38,7 @@ fn progCheckErr(prog: gl.Program) !void {
 }
 
 // TODO: take either a path or a string or an already compiled shader
-pub fn init(comptime vert_p: []const u8, comptime frag_p: []const u8) !Self {
+pub fn init(comptime vert_p: []const u8, comptime frag_p: []const u8) !gl.Program {
     const vert_f = @embedFile(vert_p);
     const frag_f = @embedFile(frag_p);
 
@@ -64,8 +60,5 @@ pub fn init(comptime vert_p: []const u8, comptime frag_p: []const u8) !Self {
     prog.link();
     try progCheckErr(prog);
 
-    return Self{ .prog = prog };
-}
-pub fn use(self: Self) void {
-    self.prog.use();
+    return prog;
 }
