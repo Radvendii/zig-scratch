@@ -33,8 +33,7 @@ pub fn main() !void {
     // TODO: make this window.createContext()
     const context = try sdl.gl.createContext(window);
 
-    // TODO: maybe make this context.makeCurrent(). is it sensible to have one context attached to multiple windows?
-    try sdl.gl.makeCurrent(context, window);
+    try context.makeCurrent(window);
 
     // must be called after the context is current
     // SEE: https://wiki.libsdl.org/SDL2/SDL_GL_GetProcAddress

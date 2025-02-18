@@ -27,8 +27,8 @@ pub fn build(b: *std.Build) void {
 
     // TODO: update SDL.zig to use modern module system
     const sdl = @import("sdl");
-    const sdl_sdk = sdl.init(b, null);
-    sdl_sdk.link(exe, .dynamic);
+    const sdl_sdk = sdl.init(b, .{});
+    sdl_sdk.link(exe, .dynamic, sdl.Library.SDL2);
     exe.root_module.addImport("sdl", sdl_sdk.getWrapperModule());
 
     const zgl = b.dependency("zgl", .{
