@@ -1,6 +1,8 @@
 const std = @import("std");
-const sdl = @import("sdl");
+
 const gl = @import("zgl");
+const sdl = @import("sdl");
+
 const c = @import("c.zig");
 const ShaderProg = @import("shader_prog.zig");
 
