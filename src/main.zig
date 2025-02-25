@@ -10,6 +10,10 @@ var x_offset: f32 = 0.0;
 var y_offset: f32 = 0.0;
 var offset_prog_location: u32 = undefined;
 
+var window_w: u32 = 640;
+var window_h: u32 = 480;
+var wSize_prog_location: u32 = undefined;
+
 var quit = false;
 
 pub fn main() !void {
@@ -30,8 +34,8 @@ pub fn main() !void {
         "SDL.zig Basic Demo",
         .{ .centered = {} },
         .{ .centered = {} },
-        640,
-        480,
+        window_w,
+        window_h,
         .{ .vis = .shown, .context = .opengl },
     );
     defer window.destroy();
@@ -45,19 +49,21 @@ pub fn main() !void {
     // SEE: https://wiki.libsdl.org/SDL2/SDL_GL_GetProcAddress
     try initGL();
 
+    const prog = try ShaderProg.init("./shaders/vert.glsl", "./shaders/frag.glsl");
+
     // TODO: getSize() should probably return the same type that viewport() takes??
-    const window_size = window.getSize();
+    // const window_size = window.getSize();
     // Not necessary. It should be created this way by default
-    gl.viewport(0, 0, @intCast(window_size.width), @intCast(window_size.height));
+    gl.viewport(0, 0, window_w, window_h);
 
     gl.clearColor(0.2, 0.5, 0.3, 1.0);
 
     const vertices = [_]f32{
         // positions   // colors
-        -0.5, -0.5, 0, 1.0, 0.0, 0.0,
-        0.5,  -0.5, 0, 0.0, 1.0, 0.0,
-        0.5,  0.5,  0, 0.0, 0.0, 1.0,
-        -0.5, 0.5,  0, 1.0, 1.0, 1.0,
+        -500, -500, 0, 1.0, 0.0, 0.0,
+        500,  -500, 0, 0.0, 1.0, 0.0,
+        500,  500,  0, 0.0, 0.0, 1.0,
+        -500, 500,  0, 1.0, 1.0, 1.0,
     };
 
     const indices = [_]u32{
@@ -84,7 +90,6 @@ pub fn main() !void {
     gl.vertexAttribPointer(0, 3, .float, false, 3 * @sizeOf(f32), 0);
     gl.enableVertexAttribArray(0);
 
-    const prog = try ShaderProg.init("./shaders/vert.glsl", "./shaders/frag.glsl");
     prog.use();
 
     // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
@@ -101,7 +106,9 @@ pub fn main() !void {
 
     // TODO: wrap uniforms in their own enum datatype?
     offset_prog_location = prog.uniformLocation("offset") orelse undefined;
+    wSize_prog_location = prog.uniformLocation("wSize") orelse undefined;
     gl.uniform2f(offset_prog_location, x_offset, y_offset);
+    gl.uniform2ui(wSize_prog_location, window_w, window_h);
 
     while (!quit) {
         pollEvents();
@@ -117,8 +124,11 @@ var polygon_mode: gl.DrawMode = .fill;
 fn pollEvents() void {
     while (sdl.pollEvent()) |ev| switch (ev) {
         .window => |wev| switch (wev.type) {
-            .resized => |rev| {
-                gl.viewport(0, 0, @intCast(rev.width), @intCast(rev.height));
+            .size_changed => |size| {
+                window_w = @intCast(size.width);
+                window_h = @intCast(size.height);
+                gl.viewport(0, 0, window_w, window_h);
+                gl.uniform2ui(wSize_prog_location, window_w, window_h);
             },
             .close => {
                 quit = true;
@@ -144,7 +154,7 @@ fn render(vao: gl.VertexArray, shader_prog: gl.Program) !void {
     vao.bind();
     shader_prog.use();
     gl.uniform2f(offset_prog_location, x_offset, y_offset);
-    x_offset += 0.001;
+    // x_offset += 0.001;
 
     gl.drawElements(.triangles, 6, .unsigned_int, 0);
     // gl.drawArrays(.triangles, 0, 3);
