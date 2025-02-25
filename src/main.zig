@@ -48,9 +48,15 @@ pub fn main() !void {
 
     const vertices = [_]f32{
         // positions   // colors
-        -0.7, -0.7, 0, 1.0, 0.0, 0.0,
-        0,    0.6,  0, 0.0, 1.0, 0.0,
-        0.7,  -0.7, 0, 0.0, 0.0, 1.0,
+        -0.5, -0.5, 0, 1.0, 0.0, 0.0,
+        0.5,  -0.5, 0, 0.0, 1.0, 0.0,
+        0.5,  0.5,  0, 0.0, 0.0, 1.0,
+        -0.5, 0.5,  0, 1.0, 1.0, 1.0,
+    };
+
+    const indices = [_]i32{
+        0, 1, 3, // first triangle
+        1, 2, 3, // second triangle
     };
 
     const vao = gl.genVertexArray();
@@ -61,6 +67,10 @@ pub fn main() !void {
     // TODO: the indirection confuses zls. report bug
     vbo.bind(.array_buffer);
     vbo.data(f32, &vertices, .static_draw);
+
+    const ebo = gl.genBuffer();
+    ebo.bind(.element_array_buffer);
+    ebo.data(i32, &indices, .static_draw);
 
     // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
     // we can use prog.attribLocation(), but that would require the program to exist, runs at runtime, and technically only makes sense for a single program. then we have to store those somewhere.
@@ -128,8 +138,8 @@ fn render(vao: gl.VertexArray, shader_prog: gl.Program) !void {
     vao.bind();
     shader_prog.use();
 
-    // gl.drawElements(.triangles, 6, .unsigned_int, 0);
-    gl.drawArrays(.triangles, 0, 3);
+    gl.drawElements(.triangles, 6, .unsigned_int, 0);
+    // gl.drawArrays(.triangles, 0, 3);
 }
 
 fn getProcAddressWrapper(comptime _: type, symbolName: [:0]const u8) ?*const anyopaque {
