@@ -6,6 +6,10 @@ const sdl = @import("sdl");
 const c = @import("c.zig");
 const ShaderProg = @import("shader_prog.zig");
 
+var x_offset: f32 = 0.0;
+var y_offset: f32 = 0.0;
+var offset_prog_location: u32 = undefined;
+
 var quit = false;
 
 pub fn main() !void {
@@ -56,7 +60,7 @@ pub fn main() !void {
         -0.5, 0.5,  0, 1.0, 1.0, 1.0,
     };
 
-    const indices = [_]i32{
+    const indices = [_]u32{
         0, 1, 3, // first triangle
         1, 2, 3, // second triangle
     };
@@ -72,7 +76,7 @@ pub fn main() !void {
 
     const ebo = gl.genBuffer();
     ebo.bind(.element_array_buffer);
-    ebo.data(i32, &indices, .static_draw);
+    ebo.data(u32, &indices, .static_draw);
 
     // this is nuts. the "0" here refers to the "location = 0" in the vertex shader. talk about magic numbers
     // we can use prog.attribLocation(), but that would require the program to exist, runs at runtime, and technically only makes sense for a single program. then we have to store those somewhere.
@@ -96,8 +100,8 @@ pub fn main() !void {
     }
 
     // TODO: wrap uniforms in their own enum datatype?
-    const offset = prog.uniformLocation("offset");
-    gl.uniform2f(offset, 0.2, 0.0);
+    offset_prog_location = prog.uniformLocation("offset") orelse undefined;
+    gl.uniform2f(offset_prog_location, x_offset, y_offset);
 
     while (!quit) {
         pollEvents();
@@ -139,6 +143,8 @@ fn pollEvents() void {
 fn render(vao: gl.VertexArray, shader_prog: gl.Program) !void {
     vao.bind();
     shader_prog.use();
+    gl.uniform2f(offset_prog_location, x_offset, y_offset);
+    x_offset += 0.001;
 
     gl.drawElements(.triangles, 6, .unsigned_int, 0);
     // gl.drawArrays(.triangles, 0, 3);
