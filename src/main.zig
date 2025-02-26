@@ -6,8 +6,8 @@ const sdl = @import("sdl");
 const c = @import("c.zig");
 const ShaderProg = @import("shader_prog.zig");
 
-var x_offset: f32 = 0.0;
-var y_offset: f32 = 0.0;
+var x_offset: i32 = 0;
+var y_offset: i32 = 0;
 var offset_prog_location: u32 = undefined;
 
 var window_w: u32 = 640;
@@ -60,10 +60,10 @@ pub fn main() !void {
 
     const vertices = [_]f32{
         // positions   // colors
-        -500, -500, 0, 1.0, 0.0, 0.0,
-        500,  -500, 0, 0.0, 1.0, 0.0,
-        500,  500,  0, 0.0, 0.0, 1.0,
-        -500, 500,  0, 1.0, 1.0, 1.0,
+        -200, -200, 0, 1.0, 0.0, 0.0,
+        200,  -200, 0, 0.0, 1.0, 0.0,
+        200,  200,  0, 0.0, 0.0, 1.0,
+        -200, 200,  0, 1.0, 1.0, 1.0,
     };
 
     const indices = [_]u32{
@@ -107,7 +107,6 @@ pub fn main() !void {
     // TODO: wrap uniforms in their own enum datatype?
     offset_prog_location = prog.uniformLocation("offset") orelse undefined;
     wSize_prog_location = prog.uniformLocation("wSize") orelse undefined;
-    gl.uniform2f(offset_prog_location, x_offset, y_offset);
     gl.uniform2ui(wSize_prog_location, window_w, window_h);
 
     while (!quit) {
@@ -146,6 +145,13 @@ fn pollEvents() void {
             },
             else => {},
         },
+        .mouse_motion => |mev| {
+            if (mev.button_state.getPressed(.left)) {
+                // +/- is trial and error
+                x_offset += mev.delta_x;
+                y_offset -= mev.delta_y;
+            }
+        },
         else => {},
     };
 }
@@ -153,7 +159,7 @@ fn pollEvents() void {
 fn render(vao: gl.VertexArray, shader_prog: gl.Program) !void {
     vao.bind();
     shader_prog.use();
-    gl.uniform2f(offset_prog_location, x_offset, y_offset);
+    gl.uniform2i(offset_prog_location, x_offset, y_offset);
     // x_offset += 0.001;
 
     gl.drawElements(.triangles, 6, .unsigned_int, 0);
