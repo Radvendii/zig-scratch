@@ -13,6 +13,8 @@ void main() {
     vec2 shifted = vec2(aPos.xy + offset);
     vec2 normalized = vec2(shifted.x / wSize.x * 2, shifted.y / wSize.y * 2);
     gl_Position = vec4(normalized, aPos.z, 1.0);
-    vertColor = vec4(aColor, 1.0);
+    // AHHHHHHHHHHHHHH dividing by 255.0 is the only way to just PASS A FUCKING BYTE BACK without creating some FUCKING framebuffer object
+    vertColor = vec4(gl_VertexID / 255.0, 0.0, 0.0, 1.0);
+    // vertColor = vec4(aColor, 1.0);
     vertPos = aPos;
 }
