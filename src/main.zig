@@ -24,6 +24,7 @@ var vertices = [_]f32{
     -200, 200,  0, 1.0, 1.0, 1.0,
 };
 var vao: gl.VertexArray = undefined;
+var vbo: gl.Buffer = undefined;
 
 var selection: ?u8 = null;
 
@@ -102,7 +103,7 @@ pub fn main() !void {
     vao.bind();
 
     // TODO: in what world would i ever want to take the same array and bind it sometimes as one and sometimes as another type of buffer? should that info not be stored with the buffer?
-    const vbo = gl.genBuffer();
+    vbo = gl.genBuffer();
     // TODO: the indirection confuses zls. report bug
     vbo.bind(.array_buffer);
     vbo.data(f32, &vertices, .static_draw);
@@ -171,12 +172,21 @@ fn pollEvents(find_vertex: gl.Program) void {
         },
         .mouse_motion => |mev| {
             if (mev.button_state.getPressed(.left)) {
-                // +/- is trial and error
-                x_offset += mev.delta_x;
-                y_offset -= mev.delta_y;
+                if (selection) |sel| {
+                    vertices[sel * 6] += @floatFromInt(mev.delta_x);
+                    vertices[sel * 6 + 1] -= @floatFromInt(mev.delta_y);
+                    vao.bind();
+                    vbo.bind(.array_buffer);
+                    vbo.data(f32, &vertices, .dynamic_draw);
+                } else {
+                    // nothing selected, we move the screen
+                    // +/- is trial and error
+                    x_offset += mev.delta_x;
+                    y_offset -= mev.delta_y;
+                }
             }
         },
-        .mouse_button_down => |mev| {
+        .mouse_button_up => |mev| {
             if (mev.button == .left) {
                 find_vertex.use();
                 vao.bind();
@@ -212,9 +222,6 @@ fn pollEvents(find_vertex: gl.Program) void {
                 // sdl.gl.swapWindow(window);
             }
         },
-        .mouse_button_up => |mev| {
-            _ = mev;
-        },
         else => {},
     };
 }
@@ -222,6 +229,7 @@ fn pollEvents(find_vertex: gl.Program) void {
 fn render(shader_prog: gl.Program, selection_prog: gl.Program) !void {
     vao.bind();
     shader_prog.use();
+    gl.uniform2ui(wSize_prog_location, window_w, window_h);
     gl.uniform2i(offset_prog_location, x_offset, y_offset);
     gl.drawElements(.triangles, 6, .unsigned_int, 0);
 
